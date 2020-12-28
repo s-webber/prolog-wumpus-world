@@ -8,6 +8,20 @@ The simulator and user interface is written in Java. The logic for controlling t
 
 The images used by the application are taken from [Bootstrap Icons](https://icons.getbootstrap.com/), which is licensed under the MIT license.
 
+## How to run the application
+
+You can build the application using the command:
+
+```
+./mvnw package
+```
+
+You can then run the application using the command:
+
+```
+java -jar target/prolog-wumpus-world-0.1.0-SNAPSHOT.jar
+```
+
 ## Rules
 
 
