@@ -1,15 +1,21 @@
+% This file contains logic to navigate an agent around a Wumpus World.
+% The entry points - called from the PrologGameController Java class - are reset_agent_state/0 process/2.
+
 ?- arithmetic_function(estimate_cost/2).
 
+% The agents home location.
+% This is the location where the agent starts and where they must return in order to climb out of the maze.
 home(0:0).
 
-init :-
+% Resets the agent state.
+% The agent starts facing North in the home location.
+reset_agent_state :-
   writeln('Reset agent state'),
   retractall(agent_state(_,_)),
   retractall(arrow_state(_)),
   retractall(visited(_)),
   retractall(to_visit(_)),
   retractall(possible_wumpus(_)),
-  retractall(breeze(_)),
   retractall(stench(_)),
   retractall(wall(_)),
   retractall(have_gold),
@@ -90,18 +96,12 @@ add_adjacent_to_stench(Coord) :-
   unknown(Adjacent),
   assert(possible_wumpus(Adjacent)).
 
-% TODO have assert_once and assert_singleton predicates?
-% maintain a record of where we have visited and what warnings we have percieved
+% Maintain a record of where we have visited and where we have detected a stench percept.
 add_visited(Coord,Percepts) :-
   is_stench(Percepts),
   \+ stench(Coord),
   assert(stench(Coord)),
   add_adjacent_to_stench(Coord),
-  fail.
-add_visited(Coord,Percepts) :-
-  is_breeze(Percepts),
-  \+ breeze(Coord),
-  assert(breeze(Coord)),
   fail.
 add_visited(Coord,Percepts) :-
   \+ visited(Coord),
@@ -279,36 +279,37 @@ set_path :-
 
 % update/2, log_state and process/2 predicates
 % ***********************************************************
+% If we detect a scream percept then we know the Wumpus has been killed.
 update(Percepts, Action) :-
   is_scream(Percepts),
   update_arrow_state(hit),
   agent_state(Coord,Direction),
-  % if wumpus dead then know it is safe to move to the square into which we fired the arrow
+  % As the wumpus is dead then we know it is safe to move to the square into which we fired the arrow.
   create_state(state(Coord,Direction),NewState),
   set_route([NewState]),
   fail.
-% if hit wall then reverse
+% If we detect a buknow that our last move caused us to bump into a wall.
 update(Percepts, Action) :-
   is_bump(Percepts),
-  % revert location to previous value prior to the forward action that caused the bump
+  % Revert location to previous value prior to the forward action that caused the bump.
   agent_state(Coord,Direction),
   create_state(state(NewCoord,_),state(Coord,Direction)),
   update_agent_state(NewCoord,Direction),
   add_wall(Coord),
   retractall(route(_)), % retract any planned route as has been invalidated by hitting a wall
   fail.
-% record current location
+% Record that we have visited the current location.
 update(Percepts, Action) :-
   agent_state(Coord,_),
   add_visited(Coord,Percepts),
   fail.
-% if see gold then take it
+% If we detect a glitter percept then we know we are in the same location as the gold, and so should take it.
 update(Percepts, Action) :-
   is_glitter(Percepts), 
   assert(have_gold),
   Action = take,
   !.
-% if not following a path and either have gold or nowhere left to search then climb out
+% If in the home location and should exit then climb out of the maze.
 update(Percepts, Action) :-
   \+ route([_|_]),
   should_exit,
@@ -316,11 +317,12 @@ update(Percepts, Action) :-
   agent_state(HomeCoord,_),
   Action = climb,
   !.
-% if stench and dont have gold and have arrow and nowhere left to visit then hunt wumpus
+% If we detect a stench percept and a) dont have gold, b) have arrow and c) have nowhere left to visit then fire at the wumpus
 update(Percepts, Action) :-
   should_fire,
   update_arrow_state(fired),
-  % if not a breeze then after firing the arrow it will be safe to move forward - as will contain no wumpus or a dead wumpus
+  % If not a breeze then after firing the arrow it will be safe to move forward -
+  % as the square in front will not contain a pit (as no breeze) and will contain either no wumpus or a dead wumpus.
   (is_breeze(Percepts) -> 
     true; 
     agent_state(Coord,Direction),
@@ -328,7 +330,7 @@ update(Percepts, Action) :-
     set_route([NewState])),
   Action=fire,
   !.
-% if should hunt and percieve stench then turn to face wumpus
+% If detect a stench when hunting the wumpus then turn to face them so they will be killed when we fire the arrow.
 update(Percepts,Action) :-
   should_hunt,
   agent_state(Coord,Direction),
@@ -339,12 +341,12 @@ update(Percepts,Action) :-
     update_agent_state(Coord,NewDirection),Action=right;
     turn_left(Direction,LeftDirection),update_agent_state(Coord,LeftDirection),Action=left),
   !.
-% if not already following a path then create one
+% If not already following a path then create one.
 update(Percepts, Action) :-
   \+ route([_|_]),
   set_path,
   fail.
-% if have path and next step is in front of agent then move forward
+% If have path and next step is in front of agent then move forward.
 update(Percepts, Action) :-
   route([state(NewCoord,Direction)|T]),
   agent_state(_,Direction),
@@ -353,14 +355,14 @@ update(Percepts, Action) :-
   update_agent_state(NewCoord,Direction),
   Action=forward,
   !.
-% if have path and next step is to side of agent then turn
+% If have path and next step is to side of agent then turn to face it.
 update(Percepts, Action) :-
   route([state(_,NewDirection)|_]),
   agent_state(Coord,Direction),
   adjacent_direction(Direction,NewDirection,Action),
   update_agent_state(Coord,NewDirection),
   !.
-% if have path and next step is behind agent then turn
+% If have path and next step is behind agent then start to turn around.
 update(Percepts, Action) :- % 180 degree turn required
   route([_|_]),
   agent_state(Coord,Direction),
@@ -368,6 +370,7 @@ update(Percepts, Action) :- % 180 degree turn required
   update_agent_state(Coord,NewDirection),
   Action=right,
   !.
+% Should never get here.
 update(Percepts, Action) :-
   writeln('Stuck!'),
   Action = stuck.
@@ -379,10 +382,14 @@ log_state :- findall(X,possible_wumpus(X),Result), length(Result,Length), Length
 log_state :- route(Result), length(Result,Length), Length>0, write('Follwing path: '), writeln(Result), fail.
 log_state.
 
+% This predicate is called from the PrologGameController Java class.
+% The first argument will be a list containing atoms representing each of the percepts detected on this move.
+% The second argument will be a variable that process/2 will unify with the action the agent should take next.
 process(Percepts, Action) :-
-  update(Percepts, Action),
   write('Input: '),
   writeln(Percepts),
+  update(Percepts, Action),
   log_state,
   write('Output: '),
   writeln(Action).
+

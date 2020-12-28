@@ -68,7 +68,7 @@ To help the agent reason about the world it receives percepts. The percepts the 
 If someone would like to implement their own logic to navigate the agent around the world then they can do so by:
 
 ### Implementing the agent logic in Prolog
-If implementing the logic using Prolog then they can replace the logic in `src/main/resources/prolog/wumpus.pl`. They will need to provide a `init/0` predicate which resets the agent's game state and a `process/2` predicate. The first argument of `process/2` will be a list of percepts. The second argument will be a variable that should be unified with an atom that indicates which action the agent should perform next.
+If implementing the logic using Prolog then they can replace the logic in `src/main/resources/prolog/wumpus.pl`. They will need to provide a `reset_agent_state/0` predicate which resets the agent's game state and a `process/2` predicate. The first argument of `process/2` will be a list of percepts. The second argument will be a variable that should be unified with an atom that indicates which action the agent should perform next.
 
 ### Implementing the agent logic in Java (or another JVM language)
 If implementing the logic in a different language than Prolog then they will need to implement their own version of `org.projog.wumpus.GameController`. They will then need to alter `org.projog.wumpus.WumpusWorld` to create an instance of their implementation instead of `PrologGameController`. 

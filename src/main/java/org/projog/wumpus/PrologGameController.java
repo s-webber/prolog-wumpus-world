@@ -14,13 +14,13 @@ import org.projog.wumpus.model.Percept;
 /** Facade to prolog code that contains the logic used to control the agent. */
 class PrologGameController implements GameController {
    private final Projog projog;
-   private final QueryPlan initQuery;
+   private final QueryPlan resetStateQuery;
    private final QueryPlan updateQuery;
 
    PrologGameController() {
       projog = new Projog();
       projog.consultResource("prolog/wumpus.pl");
-      initQuery = projog.createPlan("init.");
+      resetStateQuery = projog.createPlan("reset_agent_state.");
       updateQuery = projog.createPlan("process(Percepts,Action).");
 
       reset();
@@ -35,7 +35,7 @@ class PrologGameController implements GameController {
    /** Reset agent state back to the starting state. */
    @Override
    public synchronized void reset() {
-      initQuery.executeOnce();
+      resetStateQuery.executeOnce();
    }
 
    /**

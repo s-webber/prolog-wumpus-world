@@ -95,7 +95,6 @@ public class World {
             break;
          case CLIMB:
             if (isHome(location)) {
-               System.out.println("escaped");
                agent.setState(AgentState.ESCAPED);
             } else {
                throw new IllegalStateException("cannot climb as not home");
