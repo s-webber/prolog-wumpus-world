@@ -229,6 +229,34 @@ public class WumpusWorldTest {
                   LEFT, FORWARD, FIRE, FORWARD, TAKE, RIGHT, RIGHT, FORWARD, FORWARD, CLIMB);
    }
 
+   @Test
+   public void on_first_move_fire_and_miss_wumpus() {
+      MazeBuilder builder = new MazeBuilder();
+      builder.boundary(0, 3, 0, 3);
+      builder.home(0, 2);
+      builder.gold(3, 1);
+      builder.wumpus(0, 3); // adjacent to home but not facing agent
+      builder.wall(1, 2);
+      builder.pit(2, 1).pit(2, 4);
+
+      assertActions(builder, FIRE, FORWARD, FORWARD, FORWARD, LEFT, FORWARD, RIGHT, RIGHT, FORWARD, FORWARD, RIGHT, RIGHT, FORWARD, LEFT, FORWARD, RIGHT, FORWARD, FORWARD, RIGHT,
+                  RIGHT, FORWARD, LEFT, FORWARD, FORWARD, LEFT, FORWARD, LEFT, FORWARD, FORWARD, CLIMB);
+   }
+
+   @Test
+   public void on_first_move_fire_and_hit_wumpus() {
+      MazeBuilder builder = new MazeBuilder();
+      builder.boundary(0, 3, 0, 3);
+      builder.home(3, 2);
+      builder.gold(2, 3);
+      builder.wumpus(3, 1); // adjacent to home and facing agent
+      builder.wall(1, 3);
+      builder.pit(1, 0).pit(2, 0);
+
+      // TODO these actions are not optimal - should be possible for agent to take the gold before climbing out of the maze
+      assertActions(builder, FIRE, FORWARD, FORWARD, RIGHT, RIGHT, FORWARD, LEFT, FORWARD, RIGHT, RIGHT, FORWARD, RIGHT, RIGHT, FORWARD, RIGHT, FORWARD, CLIMB);
+   }
+
    private void assertActions(MazeBuilder builder, Action... expectedActions) {
       Maze maze = builder.build();
       World world = new World(maze);
