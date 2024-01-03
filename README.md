@@ -1,4 +1,5 @@
 # prolog-wumpus-world
+[![Build Status](https://github.com/s-webber/prolog-wumpus-world/actions/workflows/github-actions.yml/badge.svg)](https://github.com/s-webber/prolog-wumpus-world/actions/)
 
 ## About
 
